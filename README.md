@@ -34,6 +34,9 @@ OPTIONS:
     -p, --prompt <PROMPT>
             custom prompt to use
 
+        --pace <PACE>
+            the pace cursor's speed
+
     -s, --number-of-secs <NUMBER_OF_SECS>
             number of seconds to run test
 
@@ -42,7 +45,6 @@ OPTIONS:
 
     -w, --number-of-words <NUMBER_OF_WORDS>
             number of words to use in test [default: 15]
-
 ```
 
 
@@ -77,6 +79,7 @@ For detailed usage run `thokr -h`.
 | `thokr -w 100 -l english1k` |                        100 of the 1000 most common English words |
 | `thokr -w 10 -s 5`          | 10 of the 200 most common English words (hard stop at 5 seconds) |
 | `thokr -p "$(cat foo.txt)"` |                   custom prompt with the output of `cat foo.txt` |
+| `thokr --pace 100`          |                     enable a pace cursor with a speed of 100 wpm |
 | `thokr -f 4`                | 4 grammatical sentences with full stops; overrides word settings |
 
 _During a test you can press ← to start over or → to see a new prompt (assuming

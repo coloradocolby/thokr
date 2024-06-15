@@ -35,10 +35,11 @@ pub struct Thok {
     pub wpm: f64,
     pub accuracy: f64,
     pub std_dev: f64,
+    pub pace: Option<f64>,
 }
 
 impl Thok {
-    pub fn new(prompt: String, number_of_words: usize, number_of_secs: Option<f64>) -> Self {
+    pub fn new(prompt: String, number_of_words: usize, number_of_secs: Option<f64>, pace: Option<f64>) -> Self {
         Self {
             prompt,
             input: vec![],
@@ -52,12 +53,16 @@ impl Thok {
             wpm: 0.0,
             accuracy: 0.0,
             std_dev: 0.0,
+            pace,
         }
     }
 
     pub fn on_tick(&mut self) {
-        self.seconds_remaining =
-            Some(self.seconds_remaining.unwrap() - (TICK_RATE_MS as f64 / 1000_f64));
+        if let Some(v) = self.seconds_remaining {
+            self.seconds_remaining = Some(v - (TICK_RATE_MS as f64 / 1000_f64));
+        }
+        // self.seconds_remaining =
+        //     Some(self.seconds_remaining.unwrap() - (TICK_RATE_MS as f64 / 1000_f64));
     }
 
     pub fn get_expected_char(&self, idx: usize) -> char {
@@ -204,7 +209,6 @@ impl Thok {
             let needs_header = !log_path.exists();
 
             let mut log_file = OpenOptions::new()
-                .write(true)
                 .append(true)
                 .create(true)
                 .open(log_path)?;

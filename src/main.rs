@@ -18,7 +18,7 @@ use std::{
     thread,
     time::Duration,
 };
-use tui::{
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     Frame, Terminal,
 };
@@ -49,6 +49,10 @@ pub struct Cli {
     /// language to pull words from
     #[clap(short = 'l', long, arg_enum, default_value_t = SupportedLanguage::English)]
     supported_language: SupportedLanguage,
+
+    /// the pace cursor's speed
+    #[clap(long)]
+    pace: Option<u16>,
 }
 
 #[derive(Debug, Copy, Clone, ArgEnum, strum_macros::Display)]
@@ -73,6 +77,7 @@ struct App {
 impl App {
     fn new(cli: Cli) -> Self {
         let mut count = 0;
+        let pace = cli.pace.map(|p| p as f64);
         let prompt = if cli.prompt.is_some() {
             cli.prompt.clone().unwrap()
         } else if cli.number_of_sentences.is_some() {
@@ -88,7 +93,7 @@ impl App {
         };
         if cli.number_of_sentences.is_some() {
             Self {
-                thok: Thok::new(prompt, count, cli.number_of_secs.map(|ns| ns as f64)),
+                thok: Thok::new(prompt, count, cli.number_of_secs.map(|ns| ns as f64), pace),
                 cli: Some(cli),
             }
         } else {
@@ -97,6 +102,7 @@ impl App {
                     prompt,
                     cli.number_of_words,
                     cli.number_of_secs.map(|ns| ns as f64),
+                    pace
                 ),
                 cli: Some(cli),
             }
@@ -106,6 +112,7 @@ impl App {
     fn reset(&mut self, new_prompt: Option<String>) {
         let cli = self.cli.clone().unwrap();
         let mut count = 0;
+        let pace = cli.pace.map(|p| p as f64);
         let prompt = match new_prompt {
             Some(_) => new_prompt.unwrap(),
             _ => match cli.number_of_sentences {
@@ -123,12 +130,13 @@ impl App {
             },
         };
         if cli.number_of_sentences.is_some() {
-            self.thok = Thok::new(prompt, count, cli.number_of_secs.map(|ns| ns as f64));
+            self.thok = Thok::new(prompt, count, cli.number_of_secs.map(|ns| ns as f64), pace);
         } else {
             self.thok = Thok::new(
                 prompt,
                 cli.number_of_words,
                 cli.number_of_secs.map(|ns| ns as f64),
+                pace
             );
         }
     }
@@ -168,9 +176,9 @@ fn start_tui<B: Backend>(
     terminal: &mut Terminal<B>,
     mut app: &mut App,
 ) -> Result<(), Box<dyn Error>> {
-    let cli = app.cli.clone();
+    let cli = app.cli.clone().expect("Expected CLI");
 
-    let should_tick = cli.unwrap().number_of_secs.unwrap_or(0) > 0;
+    let should_tick = cli.number_of_secs.unwrap_or(0) > 0 || matches!(cli.pace, Some(_v));
 
     let thok_events = get_thok_events(should_tick);
 
@@ -306,6 +314,6 @@ fn get_thok_events(should_tick: bool) -> mpsc::Receiver<ThokEvent> {
     rx
 }
 
-fn ui<B: Backend>(app: &mut App, f: &mut Frame<B>) {
+fn ui(app: &mut App, f: &mut Frame) {
     f.render_widget(&app.thok, f.size());
 }
